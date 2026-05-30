@@ -1,0 +1,177 @@
+// LIFE WEB — Prisma schema
+// Source of truth = Postgres. Бот и веб пишут сюда, .md регенерируются.
+// Схема зафиксирована в Obsidian: PROJECTS/LIFE_WEB/00-Архитектура.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model lf_user {
+  id          Int      @id @default(autoincrement())
+  telegram_id BigInt   @unique
+  username    String?
+  name        String?
+  created_at  DateTime @default(now())
+
+  sleep     lf_sleep[]
+  weight    lf_weight[]
+  food      lf_food[]
+  namaz     lf_namaz[]
+  training  lf_training[]
+  health    lf_health[]
+  goals     lf_goal[]
+  deadlines lf_deadline[]
+  anxiety   lf_anxiety[]
+  diary     lf_diary[]
+  plan      lf_plan_item[]
+  tasks     lf_task[]
+}
+
+model lf_sleep {
+  id        Int      @id @default(autoincrement())
+  user_id   Int
+  date      DateTime @db.Date
+  from_time String?
+  to_time   String?
+  hours     Float
+  user      lf_user  @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, date])
+}
+
+model lf_weight {
+  id      Int      @id @default(autoincrement())
+  user_id Int
+  date    DateTime @db.Date
+  kg      Float
+  user    lf_user  @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, date])
+}
+
+model lf_food {
+  id       Int      @id @default(autoincrement())
+  user_id  Int
+  date     DateTime @db.Date
+  time     DateTime
+  item     String
+  calories Int
+  user     lf_user  @relation(fields: [user_id], references: [id])
+}
+
+model lf_namaz {
+  id      Int      @id @default(autoincrement())
+  user_id Int
+  date    DateTime @db.Date
+  fajr    Boolean  @default(false)
+  zuhr    Boolean  @default(false)
+  asr     Boolean  @default(false)
+  maghrib Boolean  @default(false)
+  isha    Boolean  @default(false)
+  user    lf_user  @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, date])
+}
+
+model lf_training {
+  id        Int      @id @default(autoincrement())
+  user_id   Int
+  date      DateTime @db.Date
+  type      String
+  duration  Int
+  intensity String
+  notes     String?
+  user      lf_user  @relation(fields: [user_id], references: [id])
+}
+
+model lf_health {
+  id       Int      @id @default(autoincrement())
+  user_id  Int
+  date     DateTime @db.Date
+  mood     Int
+  energy   Int
+  symptoms String?
+  notes    String?
+  user     lf_user  @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, date])
+}
+
+model lf_goal {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  title       String
+  description String?
+  target      Float?
+  current     Float?    @default(0)
+  unit        String?
+  deadline    DateTime?
+  status      String    @default("active")
+  created_at  DateTime  @default(now())
+  user        lf_user   @relation(fields: [user_id], references: [id])
+}
+
+model lf_deadline {
+  id       Int       @id @default(autoincrement())
+  user_id  Int
+  title    String
+  project  String?
+  due_date DateTime
+  urgent   Boolean   @default(false)
+  done     Boolean   @default(false)
+  done_at  DateTime?
+  user     lf_user   @relation(fields: [user_id], references: [id])
+}
+
+model lf_anxiety {
+  id      Int      @id @default(autoincrement())
+  user_id Int
+  date    DateTime @default(now())
+  level   Int
+  thought String
+  trigger String?
+  reframe String?
+  user    lf_user  @relation(fields: [user_id], references: [id])
+}
+
+model lf_diary {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  date       DateTime @db.Date
+  content    String
+  mood       Int?
+  has_voice  Boolean  @default(false)
+  has_photo  Boolean  @default(false)
+  media_path String?
+  user       lf_user  @relation(fields: [user_id], references: [id])
+}
+
+// План дня по часам — герой дашборда
+model lf_plan_item {
+  id       Int      @id @default(autoincrement())
+  user_id  Int
+  date     DateTime @db.Date
+  time     String   // "05:00"
+  title    String
+  category String   // sleep, work, sport, food, namaz, morning, evening
+  duration Int?     // минуты
+  done     Boolean  @default(false)
+  user     lf_user  @relation(fields: [user_id], references: [id])
+}
+
+// Задачи на день
+model lf_task {
+  id       Int      @id @default(autoincrement())
+  user_id  Int
+  date     DateTime @db.Date
+  title    String
+  project  String?  // LIFE WEB, COSTUMES, PROKAT
+  urgent   Boolean  @default(false)
+  done     Boolean  @default(false)
+  user     lf_user  @relation(fields: [user_id], references: [id])
+}

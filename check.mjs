@@ -1,0 +1,16 @@
+﻿import { PrismaClient } from "@prisma/client";
+const p = new PrismaClient();
+const u = await p.lf_user.findUnique({ where: { telegram_id: BigInt(1) } });
+console.log("user:", u);
+const t = new Date();
+t.setHours(0, 0, 0, 0);
+console.log("today (local):", t.toString());
+console.log("today (ISO):", t.toISOString());
+const plan = await p.lf_plan_item.findMany({ where: { user_id: u.id, date: t } });
+console.log("plan count (with date filter):", plan.length);
+const planAll = await p.lf_plan_item.findMany({ where: { user_id: u.id } });
+console.log("plan count (no date filter):", planAll.length);
+if (planAll.length) console.log("date stored in DB:", planAll[0].date.toISOString());
+const s = await p.lf_sleep.findUnique({ where: { user_id_date: { user_id: u.id, date: t } } });
+console.log("sleep (findUnique):", s);
+await p.$disconnect();
