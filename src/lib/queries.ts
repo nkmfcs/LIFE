@@ -324,7 +324,7 @@ export async function getFoodData() {
   return {
     todayCalories: todayFoods.reduce((s, f) => s + f.calories, 0),
     todayGoal: 2000,
-    todayFoods: todayFoods.map((f) => ({ time: formatTime(f.time), item: f.item, calories: f.calories })),
+    todayFoods: todayFoods.map((f) => ({ time: formatTime(f.time), item: f.item, calories: f.calories, composition: f.composition ?? null })),
     calByDay: Array.from(calByDay.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => ({ l: shortDate(new Date(k)), v })),
@@ -388,16 +388,58 @@ export async function getNamazData() {
   };
 }
 
+// ---- План упражнений по дням недели ----
+export async function getWorkoutPlan(): Promise<Record<number, Array<{
+  id: number;
+  exerciseId: number;
+  name: string;
+  sets: number | null;
+  reps: string | null;
+  photo_url: string | null;
+  notes: string | null;
+}>>> {
+  const userId = await getUserId();
+  const rows = await prisma.lf_workout_plan.findMany({
+    where: { user_id: userId },
+    include: { exercise: true },
+    orderBy: { order_index: "asc" },
+  });
+  const grouped: Record<number, Array<{
+    id: number; exerciseId: number; name: string;
+    sets: number | null; reps: string | null; photo_url: string | null; notes: string | null;
+  }>> = {};
+  for (const row of rows) {
+    const day = row.day_of_week;
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push({
+      id: row.exercise_id,
+      exerciseId: row.exercise_id,
+      name: row.exercise.name,
+      sets: row.exercise.sets,
+      reps: row.exercise.reps,
+      photo_url: row.exercise.photo_url,
+      notes: row.exercise.notes,
+    });
+  }
+  return grouped;
+}
+
 // ---- Тренировки ----
 export async function getTrainingData() {
   const userId = await getUserId();
   const today = startOfToday();
-  const rows = await prisma.lf_training.findMany({
-    where: { user_id: userId },
-    orderBy: { date: "desc" },
-  });
   const dow = today.getDay();
   const monday = new Date(today.getTime() + (dow === 0 ? -6 : 1 - dow) * 86400000);
+  const [rows, weekCount] = await Promise.all([
+    prisma.lf_training.findMany({
+      where: { user_id: userId },
+      orderBy: { date: "desc" },
+      take: 10,
+    }),
+    prisma.lf_training.count({
+      where: { user_id: userId, date: { gte: monday } },
+    }),
+  ]);
   return {
     all: rows.map((t) => ({
       type: t.type,
@@ -406,7 +448,7 @@ export async function getTrainingData() {
       date: formatDate(t.date),
       notes: t.notes ?? null,
     })),
-    thisWeekCount: rows.filter((r) => r.date >= monday).length,
+    thisWeekCount: weekCount,
     weekGoal: 3,
   };
 }

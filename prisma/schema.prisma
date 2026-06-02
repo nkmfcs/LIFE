@@ -18,18 +18,20 @@ model lf_user {
   name        String?
   created_at  DateTime @default(now())
 
-  sleep     lf_sleep[]
-  weight    lf_weight[]
-  food      lf_food[]
-  namaz     lf_namaz[]
-  training  lf_training[]
-  health    lf_health[]
-  goals     lf_goal[]
-  deadlines lf_deadline[]
-  anxiety   lf_anxiety[]
-  diary     lf_diary[]
-  plan      lf_plan_item[]
-  tasks     lf_task[]
+  sleep         lf_sleep[]
+  weight        lf_weight[]
+  food          lf_food[]
+  namaz         lf_namaz[]
+  training      lf_training[]
+  health        lf_health[]
+  goals         lf_goal[]
+  deadlines     lf_deadline[]
+  anxiety       lf_anxiety[]
+  diary         lf_diary[]
+  plan          lf_plan_item[]
+  tasks         lf_task[]
+  exercises     lf_exercise[]
+  workout_plans lf_workout_plan[]
 }
 
 model lf_sleep {
@@ -55,13 +57,14 @@ model lf_weight {
 }
 
 model lf_food {
-  id       Int      @id @default(autoincrement())
-  user_id  Int
-  date     DateTime @db.Date
-  time     DateTime
-  item     String
-  calories Int
-  user     lf_user  @relation(fields: [user_id], references: [id])
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  date        DateTime @db.Date
+  time        DateTime
+  item        String
+  calories    Int
+  composition String?
+  user        lf_user  @relation(fields: [user_id], references: [id])
 }
 
 model lf_namaz {
@@ -79,14 +82,15 @@ model lf_namaz {
 }
 
 model lf_training {
-  id        Int      @id @default(autoincrement())
+  id        Int                  @id @default(autoincrement())
   user_id   Int
-  date      DateTime @db.Date
+  date      DateTime             @db.Date
   type      String
   duration  Int
   intensity String
   notes     String?
-  user      lf_user  @relation(fields: [user_id], references: [id])
+  user      lf_user              @relation(fields: [user_id], references: [id])
+  photos    lf_training_photo[]
 }
 
 model lf_health {
@@ -174,4 +178,35 @@ model lf_task {
   urgent   Boolean  @default(false)
   done     Boolean  @default(false)
   user     lf_user  @relation(fields: [user_id], references: [id])
+}
+
+model lf_exercise {
+  id            Int               @id @default(autoincrement())
+  user_id       Int
+  name          String
+  sets          Int?
+  reps          String?
+  photo_url     String?
+  notes         String?
+  created_at    DateTime          @default(now())
+  user          lf_user           @relation(fields: [user_id], references: [id])
+  workout_plans lf_workout_plan[]
+}
+
+model lf_workout_plan {
+  id           Int         @id @default(autoincrement())
+  user_id      Int
+  day_of_week  Int
+  exercise_id  Int
+  order_index  Int         @default(0)
+  user         lf_user     @relation(fields: [user_id], references: [id])
+  exercise     lf_exercise @relation(fields: [exercise_id], references: [id])
+}
+
+model lf_training_photo {
+  id          Int         @id @default(autoincrement())
+  training_id Int
+  photo_url   String
+  created_at  DateTime    @default(now())
+  training    lf_training @relation(fields: [training_id], references: [id])
 }

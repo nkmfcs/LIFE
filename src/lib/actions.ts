@@ -71,16 +71,40 @@ export async function addWeight(kg: number) {
   revalidatePath("/");
 }
 
-export async function addFood(item: string, calories: number, time: string) {
+export async function addFood(item: string, calories: number, time: string, composition?: string) {
   const userId = await getUserId();
   const date = todayDate();
   const [h, m] = time.split(":").map(Number);
   const timeDate = new Date(date.getTime() + (h * 60 + m) * 60 * 1000);
   await prisma.lf_food.create({
-    data: { user_id: userId, date, time: timeDate, item, calories },
+    data: { user_id: userId, date, time: timeDate, item, calories, composition: composition ?? null },
   });
   revalidatePath("/health/food");
   revalidatePath("/");
+}
+
+export async function addExercise(
+  name: string,
+  sets: number | null,
+  reps: string | null,
+  dayOfWeek: number,
+  notes: string | null,
+  photoUrl: string | null,
+) {
+  const userId = await getUserId();
+  const exercise = await prisma.lf_exercise.create({
+    data: { user_id: userId, name, sets, reps, notes, photo_url: photoUrl },
+  });
+  await prisma.lf_workout_plan.create({
+    data: { user_id: userId, day_of_week: dayOfWeek, exercise_id: exercise.id },
+  });
+  revalidatePath("/health/training");
+}
+
+export async function deleteExercise(id: number) {
+  await prisma.lf_workout_plan.deleteMany({ where: { exercise_id: id } });
+  await prisma.lf_exercise.delete({ where: { id } });
+  revalidatePath("/health/training");
 }
 
 export async function addAnxiety(level: number, thought: string, trigger?: string) {

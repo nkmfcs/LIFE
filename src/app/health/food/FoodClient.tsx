@@ -36,13 +36,14 @@ export default function FoodClient({
 }: {
   todayCalories: number;
   todayGoal: number;
-  todayFoods: { time: string; item: string; calories: number }[];
+  todayFoods: { time: string; item: string; calories: number; composition: string | null }[];
   calByDay: { l: string; v: number }[];
   topItems: { item: string; count: number }[];
 }) {
   const [showForm, setShowForm] = useState(false);
   const [item, setItem] = useState("");
   const [calories, setCalories] = useState("");
+  const [composition, setComposition] = useState("");
   const [time, setTime] = useState(() => {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
@@ -54,9 +55,9 @@ export default function FoodClient({
     e.preventDefault();
     const cal = parseInt(calories);
     if (!item.trim() || isNaN(cal)) return;
-    await addFoodAction(item.trim(), cal, time);
+    await addFoodAction(item.trim(), cal, time, composition.trim() || undefined);
     setShowForm(false);
-    setItem(""); setCalories("");
+    setItem(""); setCalories(""); setComposition("");
   };
 
   return (
@@ -136,6 +137,12 @@ export default function FoodClient({
                 required
               />
             </div>
+            <textarea
+              style={{ ...inp, resize: "vertical", minHeight: 56 }}
+              placeholder="Состав: куриная грудка, рис, помидор..."
+              value={composition}
+              onChange={(e) => setComposition(e.target.value)}
+            />
             <div className="row" style={{ gap: 8, marginTop: 4 }}>
               <button type="submit" style={btnPrimary}>Добавить</button>
               <button type="button" className="link-action" onClick={() => setShowForm(false)}>Отмена</button>
@@ -153,21 +160,24 @@ export default function FoodClient({
           >
             <div
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 9,
-                background: "var(--paper-sunk)",
-                display: "grid",
-                placeItems: "center",
-                color: "var(--ink-soft)",
-                flexShrink: 0,
+                width: 32, height: 32, borderRadius: 9,
+                background: "var(--paper-sunk)", display: "grid",
+                placeItems: "center", color: "var(--ink-soft)", flexShrink: 0,
               }}
             >
               <Icon name="utensils" size={15} stroke={1.6} />
             </div>
             <div style={{ flex: 1 }}>
               <p className="t-small" style={{ fontWeight: 600 }}>{f.item}</p>
-              {f.time && <p className="t-micro" style={{ color: "var(--ink-mute)", marginTop: 2 }}>{f.time}</p>}
+              {f.composition && (
+                <p className="t-micro" style={{ color: "var(--ink-mute)", marginTop: 2 }}>{f.composition}</p>
+              )}
+              {f.time && !f.composition && (
+                <p className="t-micro" style={{ color: "var(--ink-mute)", marginTop: 2 }}>{f.time}</p>
+              )}
+              {f.time && f.composition && (
+                <p className="t-micro" style={{ color: "var(--ink-mute)", marginTop: 1 }}>{f.time}</p>
+              )}
             </div>
             <span className="num t-small" style={{ color: "var(--ink-mute)" }}>{f.calories} ккал</span>
           </div>
