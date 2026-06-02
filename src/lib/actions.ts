@@ -107,6 +107,47 @@ export async function deleteExercise(id: number) {
   revalidatePath("/health/training");
 }
 
+export async function updateExercise(
+  id: number,
+  name: string,
+  sets: number | null,
+  reps: string | null,
+  notes: string | null,
+) {
+  await prisma.lf_exercise.update({
+    where: { id },
+    data: { name, sets, reps, notes },
+  });
+  revalidatePath("/health/training");
+}
+
+export async function reorderExercise(exerciseId: number, direction: "up" | "down") {
+  const userId = await getUserId();
+  const current = await prisma.lf_workout_plan.findFirst({
+    where: { exercise_id: exerciseId, user_id: userId },
+  });
+  if (!current) return;
+
+  const siblings = await prisma.lf_workout_plan.findMany({
+    where: { user_id: userId, day_of_week: current.day_of_week },
+    orderBy: { order_index: "asc" },
+  });
+
+  const idx = siblings.findIndex((s) => s.exercise_id === exerciseId);
+  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= siblings.length) return;
+
+  const reordered = [...siblings];
+  [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+
+  await prisma.$transaction(
+    reordered.map((item, i) =>
+      prisma.lf_workout_plan.update({ where: { id: item.id }, data: { order_index: i } }),
+    ),
+  );
+  revalidatePath("/health/training");
+}
+
 export async function addAnxiety(level: number, thought: string, trigger?: string) {
   const userId = await getUserId();
   await prisma.lf_anxiety.create({

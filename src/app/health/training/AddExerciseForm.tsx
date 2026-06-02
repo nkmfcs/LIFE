@@ -39,33 +39,22 @@ export default function AddExerciseForm() {
   const [reps, setReps] = useState("");
   const [day, setDay] = useState("1");
   const [notes, setNotes] = useState("");
-  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const reset = () => {
-    setName(""); setSets(""); setReps(""); setNotes(""); setFile(null); setDay("1");
-  };
+  const reset = () => { setName(""); setSets(""); setReps(""); setNotes(""); setDay("1"); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     setLoading(true);
-    let photoUrl: string | null = null;
-    if (file) {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const json = await res.json() as { url: string };
-      photoUrl = json.url;
-    }
     await addExercise(
       name.trim(),
       sets ? parseInt(sets) : null,
       reps.trim() || null,
       parseInt(day),
       notes.trim() || null,
-      photoUrl,
+      null,
     );
     setOpen(false);
     reset();
@@ -76,9 +65,7 @@ export default function AddExerciseForm() {
   if (!open) {
     return (
       <div style={{ marginTop: 16, textAlign: "center" }}>
-        <button className="link-action" onClick={() => setOpen(true)}>
-          + добавить упражнение
-        </button>
+        <button className="link-action" onClick={() => setOpen(true)}>+ добавить упражнение</button>
       </div>
     );
   }
@@ -124,17 +111,6 @@ export default function AddExerciseForm() {
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
-      <div>
-        <label className="t-small" style={{ color: "var(--ink-mute)", display: "block", marginBottom: 4 }}>
-          Фото упражнения
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          style={{ fontSize: 13, color: "var(--ink-soft)" }}
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
-      </div>
       <div className="row" style={{ gap: 8, marginTop: 4 }}>
         <button type="submit" style={btnPrimary} disabled={loading}>
           {loading ? "Сохранение..." : "Добавить"}
