@@ -43,6 +43,7 @@ function getActiveId(pathname: string): string {
   if (pathname === "/anxiety") return "anxiety";
   if (pathname === "/chat") return "chat";
   if (pathname === "/settings") return "settings";
+  if (pathname === "/more" || pathname.startsWith("/more/")) return "more";
   return "";
 }
 
@@ -102,7 +103,7 @@ const TABS: NavItem[] = [
   { id: "diary",    icon: "book",     label: "Дневник",  href: "/diary" },
   { id: "sleep",    icon: "moon",     label: "Здоровье", href: "/health/sleep" },
   { id: "goals",    icon: "target",   label: "Цели",     href: "/goals" },
-  { id: "settings", icon: "settings", label: "Ещё",      href: "/settings" },
+  { id: "more",     icon: "settings", label: "Ещё",      href: "/more" },
 ];
 
 export function TabBarMobile() {
@@ -116,7 +117,7 @@ export function TabBarMobile() {
           active === t.id ||
           (t.id === "sleep" && ["sleep", "weight", "food", "namaz", "training"].includes(active)) ||
           (t.id === "goals" && ["goals", "deadlines"].includes(active)) ||
-          (t.id === "settings" && ["settings", "anxiety", "chat"].includes(active));
+          (t.id === "more" && ["more", "settings", "anxiety", "chat"].includes(active));
         return (
           <button
             key={t.id}
